@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>하루 기록</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <button id="prevDay" class="icon-btn" aria-label="이전 날">‹</button>
+    <div class="date-wrap">
+      <span id="dateLabel" class="date-label"></span>
+      <input type="date" id="datePicker" class="date-picker" aria-label="날짜 선택">
+    </div>
+    <button id="nextDay" class="icon-btn" aria-label="다음 날">›</button>
+    <button id="todayBtn" class="text-btn">오늘</button>
+    <button id="settingsBtn" class="icon-btn" aria-label="설정">⚙︎</button>
+  </header>
+
+  <section class="summary" id="summary">
+    <div class="stat stat-in"><span>섭취</span><b id="sumIn">0</b><small>kcal</small></div>
+    <div class="stat stat-out"><span>소모</span><b id="sumOut">0</b><small id="sumOutDetail"></small></div>
+    <div class="stat stat-net"><span>차이</span><b id="sumNet">0</b><small id="sumNetNote"></small></div>
+  </section>
+  <div id="importantBar" class="important-bar" hidden></div>
+
+  <main id="scroller" class="scroller">
+    <div id="timeline" class="timeline">
+      <div id="grid" class="grid"></div>
+      <div id="events" class="events"></div>
+      <div id="nowLine" class="now-line" hidden></div>
+    </div>
+  </main>
+
+  <button id="fab" class="fab" aria-label="기록 추가">+</button>
+
+  <!-- 기록 편집 -->
+  <div id="editorSheet" class="backdrop" hidden>
+    <form id="editor" class="sheet" autocomplete="off">
+      <div class="sheet-head">
+        <button type="button" class="text-btn" data-close>취소</button>
+        <h2 id="editorTitle">새 기록</h2>
+        <button type="submit" class="primary-btn">저장</button>
+      </div>
+      <div class="sheet-body">
+        <div class="type-chips" id="typeChips">
+          <button type="button" data-type="daily">📝 일상</button>
+          <button type="button" data-type="exercise">🏃 운동</button>
+          <button type="button" data-type="meal">🍚 식사</button>
+          <button type="button" data-type="event">📅 일정</button>
+        </div>
+
+        <label class="field"><span>제목</span><input id="fTitle" placeholder="무엇을 했나요?"></label>
+
+        <div class="row">
+          <label class="field"><span>시작</span><input type="time" id="fStart" step="300" required></label>
+          <label class="field"><span>종료</span><input type="time" id="fEnd" step="300" required></label>
+        </div>
+        <div class="hint" id="fDuration"></div>
+
+        <label class="switch"><input type="checkbox" id="fImportant"><span>⭐ 중요 표시</span></label>
+
+        <section id="exerciseBox" class="typebox">
+          <label class="field"><span>운동 종류</span><select id="fExercise"></select></label>
+          <div class="hint" id="metNote"></div>
+        </section>
+
+        <section id="mealBox" class="typebox">
+          <label class="field"><span>음식 추가</span><input id="foodSearch" placeholder="예: 김치찌개, 라떼" enterkeyhint="search"></label>
+          <div id="foodResults" class="food-results"></div>
+          <ul id="foodList" class="food-list"></ul>
+        </section>
+
+        <div id="kcalBox" class="kcal-box">
+          <label class="field"><span id="kcalLabel">칼로리</span><input type="number" id="fKcal" inputmode="numeric" min="0"></label>
+          <button type="button" id="kcalAuto" class="text-btn">자동 계산</button>
+        </div>
+
+        <label class="field"><span>메모</span><textarea id="fMemo" rows="3" placeholder="세부 내용, 느낀 점 등"></textarea></label>
+
+        <label class="switch"><input type="checkbox" id="fToCal"><span>구글 캘린더에 보내기 <small>(연동 후 적용)</small></span></label>
+
+        <button type="button" id="deleteBtn" class="danger-btn">이 기록 삭제</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- 설정 -->
+  <div id="settingsSheet" class="backdrop" hidden>
+    <form id="settings" class="sheet" autocomplete="off">
+      <div class="sheet-head">
+        <button type="button" class="text-btn" data-close>닫기</button>
+        <h2>내 정보 · 설정</h2>
+        <button type="submit" class="primary-btn">저장</button>
+      </div>
+      <div class="sheet-body">
+        <p class="hint" id="profileNote">기초대사량을 계산하려면 내 정보를 입력해 주세요.</p>
+        <div class="row">
+          <label class="field"><span>성별</span>
+            <select id="pSex"><option value="m">남성</option><option value="f">여성</option></select>
+          </label>
+          <label class="field"><span>나이</span><input type="number" id="pAge" inputmode="numeric" min="10" max="100" required></label>
+        </div>
+        <div class="row">
+          <label class="field"><span>키 (cm)</span><input type="number" id="pHeight" inputmode="decimal" min="100" max="230" step="0.1" required></label>
+          <label class="field"><span>체중 (kg)</span><input type="number" id="pWeight" inputmode="decimal" min="25" max="250" step="0.1" required></label>
+        </div>
+        <label class="field"><span>평소 일상 활동 (운동 제외)</span>
+          <select id="pActivity">
+            <option value="1">기초대사량만 계산</option>
+            <option value="1.2">대부분 앉아서 생활 (사무직)</option>
+            <option value="1.3">서서 일하거나 많이 걷는 편</option>
+            <option value="1.45">육체 노동이 많은 편</option>
+          </select>
+        </label>
+        <div class="bmr-box" id="bmrPreview"></div>
+
+        <h3>구글 캘린더</h3>
+        <p class="hint">'구글 캘린더에 보내기'를 켠 기록만 캘린더로 보냅니다. 연동 기능은 다음 업데이트에서 연결됩니다.</p>
+        <button type="button" class="ghost-btn" disabled>구글 계정 연결 (준비 중)</button>
+
+        <h3>백업</h3>
+        <p class="hint">기록은 이 휴대폰 브라우저에만 저장됩니다. 가끔 백업 파일을 받아 두세요.</p>
+        <div class="row">
+          <button type="button" id="exportBtn" class="ghost-btn">백업 파일 받기</button>
+          <button type="button" id="importBtn" class="ghost-btn">백업 불러오기</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+    </form>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
